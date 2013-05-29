@@ -1,6 +1,9 @@
 import json
 import collections
 
+from pandas import DataFrame
+from pandas.rpy import common as rpy_common
+
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
 
@@ -32,10 +35,10 @@ class RollcallBuilder(Builder):
     r_type = pscl.rollcall
     wrapper = Rollcall
 
-    yea = Field(name='yea', default=1)
-    nay = Field(name='nay', default=2)
+    yea = Field(name='yea', default='1')
+    nay = Field(name='nay', default='2')
     missing = Field(name='missing', default=None)
-    not_in_legis = Field(name='notInLegis', default=9)
+    not_in_legis = Field(name='notInLegis', default='9')
     legis_names = Field(name='legis.names', default=None)
     vote_names = Field(name='vote.names', default=None)
     legis_data = Field(name='legis.data', default=None)
@@ -77,15 +80,37 @@ class RollcallBuilder(Builder):
         self.add_votes()
         return dict(self._data)
 
+    def dataframe(self):
+        x = self.data.values()
+        import nose.tools;nose.tools.set_trace()
+        return DataFrame(x, index=self.data.keys())
+
+    def _r_matrix(self):
+        id_set = self._leg_id_set()
+        data = {}
+        for vote_id, vote in self.data.items():
+            data[vote_id]
+        matrix = rpy_common.convert_to_r_matrix(self.dataframe())
+        return matrix
+
+    def _leg_id_set(self):
+        '''Return a set of all leg_ids.
+        '''
+        res = set()
+        for vote_id, voters in self.data.items():
+            res |= set(voters)
+        return res
+
     def json(self):
         return json.dumps(self.data)
 
-    def robject(self):
+    def build(self):
         '''Return this instance's internal rollcall data structure as a
         pscl.rollcall object.
         '''
-        rdata = self._unflatten(self.json())
-        r_object = self.r_type(rdata, **self.r_kwargs())
+        # rdata = self._unflatten(self.json())
+        rdata = self.rdata()
+        r_object = self.r_object = self.r_type(rdata, **self.r_kwargs())
         if hasattr(self, 'wrapper'):
             r_object = self.wrapper(r_object)
         return r_object

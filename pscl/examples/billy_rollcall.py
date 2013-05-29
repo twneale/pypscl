@@ -1,6 +1,10 @@
+from rpy2.robjects.packages import importr
+
 from billy.core import db
 
 from pscl.rollcall import RollcallBuilder
+
+pscl = importr('pscl')
 
 
 if __name__ == '__main__':
@@ -17,5 +21,5 @@ if __name__ == '__main__':
             continue
         builder.add_vote(vote)
 
-    rc = builder.robject()
+    rc = builder.build()
     import pdb; pdb.set_trace()

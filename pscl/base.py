@@ -1,17 +1,19 @@
-import inspect
-
 from rpy2.robjects import NULL
 
 
 class Field(object):
 
+    class NotSet(object):
+        pass
+
     _PYTHON_R_VALUES = {
         None: NULL,
         }
 
-    def __init__(self, name, default):
+    def __init__(self, name, **kwargs):
         self.name = name
-        self.default = default
+        if 'default' in kwargs:
+            self.default = kwargs['default']
 
     def __get__(self, inst, type_=None):
         self.inst = inst
@@ -29,10 +31,14 @@ class Field(object):
         return self.inst.kwargs.get(self.name, self.default)
 
     def r_value(self):
-        '''Convert this field to it's R value.
+        '''Convert this field to it's R value. If's not set and a default
+        is supplied, return the default.
         '''
+        val = self.inst.kwargs.get(self.name, self.NotSet)
+        if val is self.NotSet and hasattr(self, 'default'):
+            val = self.default
+
         r_equiv = self._PYTHON_R_VALUES
-        val = self.inst.kwargs.get(self.name, self.default)
         if val in r_equiv:
             return r_equiv[val]
         return val
@@ -40,8 +46,11 @@ class Field(object):
     def __iter__(self):
         '''Enables tuple(myfield) to return (fieldname, r_value())
         '''
+        r_value = self.r_value()
+        if r_value is self.NotSet:
+            return
         yield self.name
-        yield self.r_value()
+        yield r_value
 
 
 class _BuilderMeta(type):
@@ -72,7 +81,8 @@ class Builder(object):
     def r_kwargs(self):
         '''Convert the class's attributes to R arguments.
         '''
-        return dict(map(tuple, self._fields.values()))
+        values = filter(None, map(tuple, self._fields.values()))
+        return dict(values)
 
     def r_object(self, *args, **kwargs):
         r_kwargs = self.r_kwargs()
@@ -83,13 +93,13 @@ class Builder(object):
         return r_object
 
 
-class Wrapper(dict):
+class Wrapper(object):
 
     def __init__(self, obj):
         self.obj = obj
 
         # Provite python-like access to object attributes.
-        self.update(obj.iteritems())
+        self.__dict__.update(obj.iteritems())
 
 
 
