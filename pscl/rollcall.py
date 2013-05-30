@@ -1,5 +1,6 @@
 import json
 import collections
+import operator
 
 from pandas import DataFrame
 from pandas.rpy import common as rpy_common
@@ -7,140 +8,129 @@ from pandas.rpy import common as rpy_common
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
 
-from .base import Field, Builder, Wrapper
+from .base import Field, Translator, Wrapper
 from .utils import Cached
 
 
 pscl = importr('pscl')
-rjsonio = importr('RJSONIO')
+
+
+class RollcallSummary(Wrapper):
+
+    @property
+    def all_votes(self):
+        return tuple(self['allVotes'])
+
+    @property
+    def codes(self):
+        '''Return a mapping of vote values like "yea" or "nay" to
+        the "codes" (in the docs, integers) that represent them
+        in the underlying Rollcall object.
+        '''
+        items = []
+        for yes_no_other, value_list in self['codes'].iteritems():
+            items.append((yes_no_other, tuple(value_list)))
+        return dict(items)
+
+    @property
+    def n(self):
+        '''The (poorly named) number of legislators in the underlying
+        Rollcall object.
+        '''
+        return list(self['n']).pop()
+
+    @property
+    def m(self):
+        '''The (poorly named) number of votes in the underlying
+        Rollcall object.
+        '''
+        return list(self['m']).pop()
+
+    def __eq__(self, other):
+        '''For some reason, 2 identical R datastructures do compare is equal
+        to each other in rpy2. Necessary for unit tests to work.
+        '''
+        return operator.eq(
+            (self.m, self.n, self.codes, self.all_votes),
+            (other.m, other.n, other.codes, other.all_votes))
 
 
 class Rollcall(Wrapper):
 
+    # Wrapped R functions ---------------------------------------------------
     def drop_unanimous(self, lop=0):
         self.obj = pscl.dropUnanimous(self.obj, lop=0)
         return self
 
-    def drop_rollcall(self, lop=0):
-        self.obj = pscl.dropRollCall(self.obj, dropList)
-        return self
-
     def summary(self):
-        return pscl.summary_rollcall(self.obj)
+        return RollcallSummary(pscl.summary_rollcall(self.obj))
+
+    # Accessors -------------------------------------------------------------
+    @property
+    def codes(self):
+        '''Return a mapping of vote values like "yea" or "nay" to
+        the "codes" (in the docs, integers) that represent them
+        in the underlying Rollcall object.
+        '''
+        items = []
+        for yes_no_other, value_list in self['codes'].iteritems():
+            items.append((yes_no_other, tuple(value_list)))
+        return dict(items)
+
+    @property
+    def votes(self):
+        return tuple(self['votes'])
+
+    @property
+    def n(self):
+        '''The (poorly named) number of legislators in the underlying
+        Rollcall object.
+        '''
+        return list(self['n']).pop()
+
+    @property
+    def m(self):
+        '''The (poorly named) number of votes in the underlying
+        Rollcall object.
+        '''
+        return list(self['m']).pop()
+
+    def __eq__(self, other):
+        return operator.eq(
+            (self.m, self.n, self.codes, self.votes),
+            (other.m, other.n, other.codes, other.votes))
+
+    @classmethod
+    def from_matrix(cls, r_matrix, **kwargs):
+        '''Instantiate a Rollcall object from an R matrix, of the kind
+        described in the pscl docs.
+        See http://cran.r-project.org/web/packages/pscl/pscl.pdf
+        '''
+        return _RollcallTranslator(**kwargs).r_object(r_matrix)
+
+    @classmethod
+    def from_dataframe(cls, dataframe, **kwargs):
+        '''Instantiate a Rollcall object from a pandas.DataFrame corresponding
+        to the R matrix described in the pscl docs.
+        See http://cran.r-project.org/web/packages/pscl/pscl.pdf
+        '''
+        r_matrix = rpy_common.convert_to_r_matrix(dataframe)
+        return cls.from_matrix(r_matrix, **kwargs)
 
 
-class RollcallBuilder(Builder):
+class _RollcallTranslator(Translator):
     '''A python wrapper around the R pscl pacakge's rollcall object.
     '''
     r_type = pscl.rollcall
     wrapper = Rollcall
 
-    yea = Field(name='yea', default='1')
-    nay = Field(name='nay', default='2')
-    missing = Field(name='missing', default=None)
-    not_in_legis = Field(name='notInLegis', default='9')
-    legis_names = Field(name='legis.names', default=None)
-    vote_names = Field(name='vote.names', default=None)
-    legis_data = Field(name='legis.data', default=None)
-    vote_data = Field(name='vote.data', default=None)
-    desc = Field(name='desc', default=None)
-    source = Field(name='source', default=None)
-
-    def __init__(self, *args, **kwargs):
-        super(RollcallBuilder, self).__init__(*args, **kwargs)
-        self._data = collections.defaultdict(dict)
-
-    @Cached
-    def _unflatten(self):
-        '''R-jutsu contributed by the incomparable Adam Hyland
-        [https://github.com/Protonk].
-        '''
-        rcode = '''
-            unflatten <- function(json) {
-              legis.list <- fromJSON(json)
-              legis.names <- unique(names(unlist(unname(legis.list))))
-              prefill <- vector("numeric", length = length(legis.names))
-              sortStretch <- function(orig) {
-                prefill[] <- NA
-                prefill[match(names(orig), legis.names)] <- orig
-                return(prefill)
-              }
-              square <- lapply(legis.list, sortStretch)
-              out.mat <- t(do.call(rbind, square))
-              rownames(out.mat) <- legis.names
-              return(out.mat)
-            }
-            '''
-        return robjects.r(rcode)
-
-    @Cached
-    def data(self):
-        '''Build the rollcall data and return is a nested dict.
-        '''
-        self.add_votes()
-        return dict(self._data)
-
-    def dataframe(self):
-        x = self.data.values()
-        import nose.tools;nose.tools.set_trace()
-        return DataFrame(x, index=self.data.keys())
-
-    def _r_matrix(self):
-        id_set = self._leg_id_set()
-        data = {}
-        for vote_id, vote in self.data.items():
-            data[vote_id]
-        matrix = rpy_common.convert_to_r_matrix(self.dataframe())
-        return matrix
-
-    def _leg_id_set(self):
-        '''Return a set of all leg_ids.
-        '''
-        res = set()
-        for vote_id, voters in self.data.items():
-            res |= set(voters)
-        return res
-
-    def json(self):
-        return json.dumps(self.data)
-
-    def build(self):
-        '''Return this instance's internal rollcall data structure as a
-        pscl.rollcall object.
-        '''
-        # rdata = self._unflatten(self.json())
-        rdata = self.rdata()
-        r_object = self.r_object = self.r_type(rdata, **self.r_kwargs())
-        if hasattr(self, 'wrapper'):
-            r_object = self.wrapper(r_object)
-        return r_object
-
-    def add_votes(self):
-        '''Override this function to access a data source and call
-        self.add_vote for each rollcall vote in the dataset.
-        '''
-
-    def add_vote(self, vote):
-        '''Add a single vote to this instance's internal rollcall
-        datastructure. Expects an object like this:
-
-        {u'vote_id': u'AKV00000303',
-         u'no_votes': [],
-         u'other_votes': [{u'leg_id': u'AKL000004', u'name': u'Coghill'},
-                          {u'leg_id': u'AKL000016', u'name': u'Stedman'}],
-         u'yes_votes': [{u'leg_id': u'AKL000005', u'name': u'Davis'},
-                        {u'leg_id': u'AKL000018', u'name': u'Wagoner'},
-                        {u'leg_id': u'AKL000019', u'name': u'Wielechowski'}]}
-
-        '''
-        data = self._data
-        vote_id = vote['vote_id']
-        keyvals = (('yes_votes', self.yea),
-                   ('no_votes', self.nay))
-        for key, val in keyvals:
-            votes = vote[key]
-            for v in votes:
-                leg_id = v['leg_id']
-                if leg_id is None:
-                    continue
-                data[leg_id][vote_id] = val
+    yea = Field(name='yea', default=1)
+    nay = Field(name='nay', default=2)
+    missing = Field(name='missing')
+    not_in_legis = Field(name='notInLegis', default=9)
+    legis_names = Field(name='legis.names')
+    vote_names = Field(name='vote.names')
+    legis_data = Field(name='legis.data')
+    vote_data = Field(name='vote.data')
+    desc = Field(name='desc')
+    source = Field(name='source')

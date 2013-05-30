@@ -1,7 +1,7 @@
 from rpy2.robjects.packages import importr
 import rpy2.robjects as robjects
 
-from .base import Field, Builder, Wrapper
+from .base import Field, Translator, Wrapper
 from .utils import Cached
 
 
@@ -23,8 +23,17 @@ class Ideal(Wrapper):
     def d(self):
         return list(self.m).pop()
 
+    @property
+    def xbar(self):
+        leg_ids = tuple(self['xbar'].rownames)
+        mcmc_values = tuple(self['xbar'])
+        return dict(zip(leg_ids, mcmc_values))
 
-class IdealCaller(Builder):
+    def __eq__(self, other):
+        return self.xbar == other.xbar
+
+
+class _IdealTranslator(Translator):
     r_type = pscl.ideal
     wrapper = Ideal
 
@@ -46,4 +55,4 @@ class IdealCaller(Builder):
 
 
 def ideal(rollcall, **kwargs):
-    return IdealCaller(obj=rollcall.obj, **kwargs).r_object()
+    return _IdealTranslator(obj=rollcall.obj, **kwargs).r_object()

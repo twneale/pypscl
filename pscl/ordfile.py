@@ -1,21 +1,12 @@
 '''Parse voteview.com .ord files.
 '''
-from itertools import izip
-from operator import itemgetter
-from collections import defaultdict
 from StringIO import StringIO
 from collections import namedtuple
-
-from rpy2.robjects.packages import importr
 
 from pandas import DataFrame
 from pandas.rpy import common as rpy_common
 
-from pscl.utils import Cached
-from pscl.rollcall import RollcallBuilder
-
-
-rpscl = importr('pscl')
+from pscl.rollcall import Rollcall
 
 
 VoterData = namedtuple('VoterData', (
@@ -57,57 +48,29 @@ class OrdFile(object):
             occupancy=bf.read(1).strip(),
             attained_office=bf.read(1).strip(),
             name=bf.read(11).strip(),
-            votes=list(bf.read().strip()))
+            votes=map(float, list(bf.read().strip())))
         return data
 
     def as_rollcall(self):
-        x =  '''{u'vote_id': u'AKV00000303',
-         u'no_votes': [],
-         u'other_votes': [{u'leg_id': u'AKL000004', u'name': u'Coghill'},
-                          {u'leg_id': u'AKL000016', u'name': u'Stedman'}],
-         u'yes_votes': [{u'leg_id': u'AKL000005', u'name': u'Davis'},
-                        {u'leg_id': u'AKL000018', u'name': u'Wagoner'},
-                        {u'leg_id': u'AKL000019', u'name': u'Wielechowski'}]}
 
-        '''
+        # Convert the ord file into a mapping of vote_ids to lists of
+        # vote values, where list index position corresponds to voter_id.
+        votes = []
+        names = []
+        for vote in self:
+            votes.append(vote.votes)
+            names.append(vote.name)
+        votes_dict = dict(enumerate(zip(*votes)))
 
-        class Votes(dict):
-            def __missing__(self, vote_id):
-                data = dict(
-                    vote_id=vote_id,
-                    no_votes=[],
-                    yes_votes=[],
-                    other_votes=[])
-                self[vote_id] = data
-                return data
+        # Convert the mapping into an R matrix.
+        dataframe = DataFrame(votes_dict, index=names)
 
-        votes = list(self)
-        votes = map(itemgetter(-1), votes)
-        votes = dict(enumerate(izip(*votes)))
-        vote_ids = list(votes)
+        # Create a rollcall object similar to pscl's.
+        rollcall = Rollcall.from_dataframe(dataframe,
+            yea=[1.0, 2.0, 3.0],
+            nay=[4.0, 5.0, 6.0],
+            missing=[7.0, 8.0, 9.0],
+            not_in_legis=0.0,
+            legis_names=names)
 
-        names = [x.name for x in self]
-
-        dataframe = DataFrame(votes, index=names)
-        matrix = rpy_common.convert_to_r_matrix(dataframe)
-        import nose.tools;nose.tools.set_trace()
-
-        votes = Votes()
-        for voterdata in self:
-            for i, vote in enumerate(voterdata.votes):
-                i = str(i)
-                if vote == '1':
-                    key = 'yes_votes'
-                elif vote == '6':
-                    key = 'no_votes'
-                elif vote == '9':
-                    key = 'other_votes'
-
-                votes[i][key].append(
-                    dict(leg_id=voterdata.icpsr_id, name=voterdata.name))
-
-        builder = RollcallBuilder()
-        for vote_id, vote in votes.items():
-            builder.add_vote(vote)
-
-        return builder.build()
+        return rollcall
