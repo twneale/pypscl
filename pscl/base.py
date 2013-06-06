@@ -38,8 +38,12 @@ class Field(object):
         self.name = name
         if 'default' in kwargs:
             self.default = kwargs['default']
+
     def __repr__(self):
-        return 'Field(name=%s, value=%s)' % (self.name, self.value)
+        if hasattr(self, 'inst'):
+            return 'Field(name=%r, value=%r)' % (self.name, self.value)
+        else:
+            return 'Field(name=%r)' % self.name
 
     def __iter__(self):
         '''Enables tuple(myfield) to return (fieldname, r_value())
@@ -85,14 +89,30 @@ class _Fields(dict):
             yield field
 
 
-class _CallTranslatorMeta(type):
+class _TranslatorMeta(type):
 
     def __new__(meta, name, bases, attrs):
+
+        # Aggregate the Fields on this translater.
         fields = {}
         for membername, member in attrs.items():
             if isinstance(member, Field):
                 fields[membername] = member
+
+        # if name == '_RollcallTranslator':
+        #     import nose.tools;nose.tools.set_trace()
+
+        for field_name, r_name in attrs.pop('field_names', []):
+            # If a list of field names is defined on the class,
+            # add them as simple fields with no default args.
+            fields[field_name] = Field(r_name)
+
+        # Make sure all defined fields are top level attrs on the class.
+        attrs.update(fields)
+
+        # Make an iterable of fields available on the class.
         attrs.update(_fields=_Fields(fields))
+
         return type.__new__(meta, name, bases, attrs)
 
 
@@ -103,7 +123,7 @@ class Translator(object):
     `r_type` with those arguments, then wrap the whole mess with the
     class-level `wrapper` class.
     '''
-    __metaclass__ = _CallTranslatorMeta
+    __metaclass__ = _TranslatorMeta
 
     def __init__(self, **kwargs):
         self.kwargs = kwargs
@@ -139,3 +159,13 @@ class Wrapper(dict):
 
     # Mute the horrific R repr method of rpy2.
     __repr__ = object.__repr__
+
+    def _get_eq_vals(self):
+        for attr in self.eq_attrs:
+            yield getattr(self, attr)
+
+    def __eq__(self, other):
+        '''For some reason, 2 identical R datastructures don't compare is equal
+        to each for me through rpy2. Necessary for unit tests to work.
+        '''
+        return tuple(self._get_eq_vals()) == tuple(other._get_eq_vals())

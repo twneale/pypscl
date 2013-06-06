@@ -1,9 +1,9 @@
 '''Parse voteview.com .ord files.
 '''
 from StringIO import StringIO
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from pandas.rpy import common as rpy_common
 
 from pscl.rollcall import Rollcall
@@ -11,10 +11,20 @@ from pscl.rollcall import Rollcall
 
 VoterData = namedtuple('VoterData', (
     'congress_number',
+
+    # aka "icpsrLegis"
     'icpsr_id',
+
+    # aka "icpsrState"
     'state_code',
+
+    # aka "cd"
     'cong_district',
+
+    # aka "state"
     'state_name',
+
+    # aka "party"
     'party_code',
     'occupancy',
     'attained_office',
@@ -62,8 +72,31 @@ class OrdFile(object):
             names.append(vote.name)
         votes_dict = dict(enumerate(zip(*votes)))
 
-        # Convert the mapping into an R matrix.
+        # Convert the mapping into a pandas DataFrame.
         dataframe = DataFrame(votes_dict, index=names)
+
+        # Also create the legis.data DataFrame.
+        # rows = []
+        # for vote in self:
+        #     rows.append(dict(
+        #         state=vote.state_code,
+        #         icpsrState=vote.state_code,
+        #         cd=vote.cong_district,
+        #         icpsrLegis=vote.icpsr_id,
+        #         party=vote.party_code
+        #         ))
+
+        rowdata = defaultdict(list)
+        for vote in self:
+            colnames = ('state_name', 'state_code', 'cong_district',
+                        'icpsr_id', 'party_code')
+            for colname in colnames:
+                rowdata[colname].append(getattr(vote, colname))
+
+        rows = {}
+        for k, v in rowdata.items():
+            rows[k] = Series(v, index=names)
+        legis_data = DataFrame(rows)
 
         # Create a rollcall object similar to pscl's.
         rollcall = Rollcall.from_dataframe(dataframe,
@@ -73,4 +106,5 @@ class OrdFile(object):
             not_in_legis=0.0,
             legis_names=names)
 
+        import nose.tools;nose.tools.set_trace()
         return rollcall
