@@ -64,6 +64,7 @@ class Rollcall(Wrapper):
             items.append((yes_no_other, tuple(value_list)))
         return dict(items)
 
+    # Alternative constructors ------------------------------------------------
     @classmethod
     def from_matrix(cls, r_matrix, **kwargs):
         '''Instantiate a Rollcall object from an R matrix, of the kind
@@ -72,7 +73,6 @@ class Rollcall(Wrapper):
         '''
         return _RollcallTranslator(**kwargs).r_object(r_matrix)
 
-    # Alternative constructors ------------------------------------------------
     @classmethod
     def from_dataframe(cls, dataframe, **kwargs):
         '''Instantiate a Rollcall object from a pandas.DataFrame corresponding

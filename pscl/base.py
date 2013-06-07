@@ -99,9 +99,6 @@ class _TranslatorMeta(type):
             if isinstance(member, Field):
                 fields[membername] = member
 
-        # if name == '_RollcallTranslator':
-        #     import nose.tools;nose.tools.set_trace()
-
         for field_name, r_name in attrs.pop('field_names', []):
             # If a list of field names is defined on the class,
             # add them as simple fields with no default args.

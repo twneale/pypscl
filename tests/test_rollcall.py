@@ -5,7 +5,7 @@ import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
 
 from pscl.rollcall import Rollcall, RollcallSummary
-from pscl.ideal import ideal
+from pscl.ideal import ideal, Ideal
 from pscl.utils import cd
 from pscl.ordfile import OrdFile
 
@@ -18,6 +18,7 @@ class RollcallTest(TestCase):
     # Create the expected rollcall object directly from R.
     # Nuke the legis.data attribute to simplify things.
     s109 = robjects.r('''
+        set.seed(42)
         library(pscl)
         s109
         ''')
@@ -48,25 +49,24 @@ class RollcallTest(TestCase):
         Test the pscl `ideal` function against our wrapped version.
         http://cran.r-project.org/web/packages/pscl/pscl.pdf.
         '''
-        xi = robjects.r('''
-            n <- dim(s109$legis.data)[1]
-            x0 <- rep(0,n)
-            x0[s109$legis.data$party=="D"] <- -1
-            x0[s109$legis.data$party=="R"] <- 1
-            id1 <- ideal(
-                s109,
+        x = robjects.r('''
+            idLong <- ideal(s109,
                 d=1,
-                startvals=list(x=x0),
+                priors=list(xpv=1e-12,bpv=1e-12),
                 normalize=TRUE,
-                store.item=TRUE,
-                maxiter=100,
-                burnin=0,
-                thin=10,
+                store.item=FALSE,
+                maxiter=260E3,
+                burnin=10E3,
+                thin=100,
                 verbose=TRUE)
             ''')
+        x = Ideal(x)
 
-        fi = ideal(
-            self.expected_rollcall, d=1, startvals=robjects.r('list(x=x0)'),
-            normalize=True, store_item=True, maxiter=100,
-            burnin=0, thin=10, verbose=True)
+        f = ideal(
+            self.expected_rollcall, d=1,
+            priors=robjects.r('list(xpv=1e-12,bpv=1e-12)'),
+            normalize=True,
+            store_item=False, maxiter=260e3,
+            burnin=10e3, thin=100,
+            verbose=True)
         import nose.tools;nose.tools.set_trace()

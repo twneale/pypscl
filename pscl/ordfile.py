@@ -106,5 +106,4 @@ class OrdFile(object):
             not_in_legis=0.0,
             legis_names=names)
 
-        import nose.tools;nose.tools.set_trace()
         return rollcall
