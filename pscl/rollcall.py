@@ -1,16 +1,10 @@
-import json
-import collections
-import operator
-
-from pandas import DataFrame
 from pandas.rpy import common as rpy_common
 
-import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
 
 from .base import Field, Translator, Wrapper
 from .accessors import LastVectorItemAccessor, VectorAccessor
-from .utils import Cached
+from .wnominate import wnominate
 
 
 pscl = importr('pscl')
@@ -81,6 +75,12 @@ class Rollcall(Wrapper):
         '''
         r_matrix = rpy_common.convert_to_r_matrix(dataframe)
         return cls.from_matrix(r_matrix, **kwargs)
+
+    def ideal(self, polarity, *args, **kwargs):
+        return ideal(self, *args, **kwargs)
+
+    def wnominate(self, polarity, *args, **kwargs):
+        return wnominate(self, polarity, *args, **kwargs)
 
 
 class _RollcallTranslator(Translator):

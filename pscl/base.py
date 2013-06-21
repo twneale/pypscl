@@ -159,10 +159,24 @@ class Wrapper(dict):
 
     def _get_eq_vals(self):
         for attr in self.eq_attrs:
-            yield getattr(self, attr)
+            try:
+                yield getattr(self, attr)
+            except AttributeError:
+                pass
 
     def __eq__(self, other):
         '''For some reason, 2 identical R datastructures don't compare is equal
         to each for me through rpy2. Necessary for unit tests to work.
         '''
         return tuple(self._get_eq_vals()) == tuple(other._get_eq_vals())
+
+
+class SubWrapper(Wrapper):
+
+    def __init__(self):
+        pass
+
+    def __get__(self, inst, type_=None):
+        obj = self.obj = inst[self.key]
+        self.update(obj.iteritems())
+        return self
