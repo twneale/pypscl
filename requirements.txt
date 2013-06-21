@@ -1,0 +1,12 @@
+argparse==1.2.1
+-e git+git@github.com:sunlightlabs/billy.git@cb423104885e1e6ed60b0ebb22616c7b81430977#egg=billy-dev
+nose==1.3.0
+numpy==1.7.1
+pandas==0.11.0
+python-dateutil==2.1
+pytz==2013b
+rpy2==2.3.6
+scipy==0.12.0
+six==1.3.0
+statsmodels==0.5.0
+wsgiref==0.1.2
