@@ -22,7 +22,7 @@ class Accessor(object):
         raise NotImplemented
 
 
-class LastVectorItemAccessor(Accessor):
+class ValueAccessor(Accessor):
     '''An accessor that casts an R vector to a list and pops
     off the last item.
     '''

@@ -1,7 +1,7 @@
 from rpy2.robjects.packages import importr
 
 from .base import Translator, Wrapper
-from .accessors import LastVectorItemAccessor, VectorAccessor
+from .accessors import ValueAccessor, VectorAccessor
 
 
 rpscl = importr('pscl')
@@ -9,9 +9,9 @@ rpscl = importr('pscl')
 
 class Ideal(Wrapper):
 
-    n = LastVectorItemAccessor('n')
-    m = LastVectorItemAccessor('m')
-    d = LastVectorItemAccessor('d')
+    n = ValueAccessor('n')
+    m = ValueAccessor('m')
+    d = ValueAccessor('d')
     all_votes = VectorAccessor('votes')
 
     eq_attrs = ('m', 'n', 'd', 'xbar')

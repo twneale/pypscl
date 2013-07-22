@@ -41,11 +41,11 @@ if __name__ == '__main__':
                 votedata[vote['_id']][leg_id] = vote_vals[k]
     leg_ids = list(filter(None, leg_ids))
 
-    for vote_id, votes in votedata.items():
-        votedata[vote_id] = map(lambda leg_id: votes.get(leg_id, MISSING), leg_ids)
+    # for vote_id, votes in votedata.items():
+    #     votedata[vote_id] = map(lambda leg_id: votes.get(leg_id, MISSING), leg_ids)
 
     # Convert the dict into a pandas DataFrame.
-    dataframe = DataFrame(votedata, index=leg_ids)
+    dataframe = DataFrame(votedata, index=leg_ids, fill_value=9)
 
     # Create a rollcall object similar to pscl's.
     rollcall = Rollcall.from_dataframe(dataframe,

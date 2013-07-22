@@ -16,7 +16,6 @@ rpscl = importr('pscl')
 class RollcallTest(TestCase):
 
     # Create the expected rollcall object directly from R.
-    # Nuke the legis.data attribute to simplify things.
     s109 = robjects.r('''
         s109
         ''')

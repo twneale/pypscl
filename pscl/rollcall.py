@@ -3,7 +3,7 @@ from pandas.rpy import common as rpy_common
 from rpy2.robjects.packages import importr
 
 from .base import Field, Translator, Wrapper
-from .accessors import LastVectorItemAccessor, VectorAccessor
+from .accessors import ValueAccessor, VectorAccessor
 from .wnominate import wnominate
 
 
@@ -13,8 +13,8 @@ pscl = importr('pscl')
 class RollcallSummary(Wrapper):
 
     all_votes = VectorAccessor('allVotes')
-    n = LastVectorItemAccessor('n')
-    m = LastVectorItemAccessor('m')
+    n = ValueAccessor('n')
+    m = ValueAccessor('m')
 
     eq_attrs = ('m', 'n', 'codes', 'all_votes')
 
@@ -41,8 +41,8 @@ class Rollcall(Wrapper):
         return RollcallSummary(pscl.summary_rollcall(self.obj))
 
     # Accessors ---------------------------------------------------------------
-    n = LastVectorItemAccessor('n')
-    m = LastVectorItemAccessor('m')
+    n = ValueAccessor('n')
+    m = ValueAccessor('m')
     all_votes = VectorAccessor('votes')
 
     eq_attrs = ('m', 'n', 'codes', 'all_votes')

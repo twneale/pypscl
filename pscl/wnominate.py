@@ -2,7 +2,7 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects import r as rr
 
 from .base import Translator, Wrapper, SubWrapper
-from .accessors import LastVectorItemAccessor, VectorAccessor
+from .accessors import ValueAccessor, VectorAccessor
 
 
 r_wnominate = importr('wnominate')
@@ -65,9 +65,9 @@ class _WnominateRollcalls(SubWrapper):
 
 
 class Wnominate(Wrapper):
-    dimensions = LastVectorItemAccessor('dimensions')
+    dimensions = ValueAccessor('dimensions')
     eigenvalues = VectorAccessor('eigenvalues')
-    beta = LastVectorItemAccessor('beta')
+    beta = ValueAccessor('beta')
     weights = VectorAccessor('weights')
     fits = VectorAccessor('fits')
 
@@ -89,6 +89,8 @@ class Wnominate(Wrapper):
     def summary(self):
         return WnominateSummary(r_wnominate.summary_nomObject(self.obj))
 
+    def plot(self):
+        r_wnominate.plot_nomObject(self.obj)
 
 
 class _WnominateTranslator(Translator):
