@@ -177,6 +177,10 @@ class SubWrapper(Wrapper):
         pass
 
     def __get__(self, inst, type_=None):
+        '''Using this wrapper's key, get the corresponding value from the
+        encompassing wrapper instance, and update the descriptor with the
+        resulting data.
+        '''
         obj = self.obj = inst[self.key]
         self.update(obj.iteritems())
         return self
