@@ -6,8 +6,14 @@ class Accessor(object):
     R type to a python equivalent before returning it.
     '''
 
-    def __init__(self, key):
-        self.key = key
+    def __init__(self, key=None):
+        '''Initialize an accessor. ``key`` can be passed in or defined
+        on the instance.
+        '''
+        _key = getattr(self, 'key', None) or key
+        if _key is None:
+            _key = self.__class__.__name__.lower()
+        self.key = _key
 
     def __get__(self, inst, type_=None):
         self.inst = inst
