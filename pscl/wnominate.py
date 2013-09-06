@@ -8,21 +8,20 @@ from .accessors import ValueAccessor, VectorAccessor
 r_wnominate = importr('wnominate')
 
 
-# Accessors -----------------------------------------------------------------
-class Coord1D(VectorAccessor):
-    '''First dimension W-NOMINATE score.
-    See http://cran.r-project.org/web/packages/wnominate/wnominate.pdf.
+# --------------------------------------------------------------------------
+# WnominateSummary object and its accessors.
+class Coord(VectorAccessor):
+    '''Returns a list of W-NOMINATE scores.
     '''
-    key = 'coord1D'
+
+class WnominateSummary(Wrapper):
+    coord1D = Coord('coord1d')
+    coord2D = Coord('coord2d')
+    eq_attrs = ('coord1D', 'coord2D')
 
 
-class Coord2D(VectorAccessor):
-    '''Second dimension W-NOMINATE score.
-    See http://cran.r-project.org/web/packages/wnominate/wnominate.pdf.
-    '''
-    key = 'coord2D'
-
-
+# --------------------------------------------------------------------------
+# WnominateRollcalls object and its accessors.
 class CorrectClassification(VectorAccessor):
     '''The "correct classification." The wnominate docs don't make clear
     what this is.
@@ -91,13 +90,34 @@ class Covariance(VectorAccessor):
     key = 'corr.1'
 
 
-# R object wrappers ---------------------------------------------------------
-class WnominateSummary(Wrapper):
-    coord1D = Coord1D()
-    coord2D = Coord2D()
-    eq_attrs = ('coord1D', 'coord2D')
+class State(VectorAccessor):
+    '''
+    '''
 
-class _WnominateLegislators(SubWrapper):
+class CongressionalDistrict(VectorAccessor):
+    '''
+    '''
+    key = 'cd'
+
+
+class Party(VectorAccessor):
+    '''
+    '''
+
+
+class IcpsrLegis(VectorAccessor):
+    key = 'icpsrLegis'
+
+
+class IcpsrState(VectorAccessor):
+    key = 'icpsrState'
+
+
+class PartyCode(VectorAccessor):
+    key = 'partyCode'
+
+
+class WnominateLegislators(SubWrapper):
     '''Legislator-specific information from the wnominate object. Most
     attributes are vectors that correspond to the order of legislators
     in the data frame.
@@ -112,20 +132,21 @@ class _WnominateLegislators(SubWrapper):
 
     se1D = StandardError1D()
     se2D = StandardError2D()
-    coord1D = Coord1D()
-    coord2D = Coord2D()
+    coord1D = Coord('coord1d')
+    coord2D = Coord('coord2D')
+    coord3D = Coord('coord3D')
 
     GMP = GeometricMeanProbability()
     corr_1 = Covariance()
 
-    # These fields are only present if your using one of the
+    # These fields are only present if you're using one of the
     # ord files.
-    state = VectorAccessor('state')
-    cd = VectorAccessor('cd')
-    party = VectorAccessor('party')
-    icpsr_legis = VectorAccessor('icpsrLegis')
-    iscpsr_state = VectorAccessor('icpsrState')
-    party_code = VectorAccessor('partyCode')
+    state = State()
+    cd = CongressionalDistrict()
+    party = Party()
+    icpsr_legis = IcpsrLegis()
+    icpsr_state = IcpsrState()
+    party_code = PartyCode()
 
     eq_attrs = (
         'CC', 'correct_yea', 'correct_nay', 'se1D', 'se2D', 'coord2D',
@@ -133,15 +154,37 @@ class _WnominateLegislators(SubWrapper):
         'cd', 'party', 'icpsr_legis', 'iscpsr_state', 'party_code')
 
 
-class _WnominateRollcalls(SubWrapper):
+# --------------------------------------------------------------------------
+# WnominateRollcalls object and its accessors.
+class ProportionalReductionInError(VectorAccessor):
+    '''The proportional reduction in error.
+    '''
+    key = 'PRE'
+
+
+class Midpoint(VectorAccessor):
+    '''W-NOMINATE midpoint.
+    '''
+
+
+class Spread(VectorAccessor):
+    '''W-NOMINATE spread.
+    '''
+
+class WnominateRollcalls(SubWrapper):
+    '''Wraps an R dataframe containing data about votes from the passed-in
+    rollcall object.
+    '''
     key = 'rollcalls'
 
-    PRE = VectorAccessor('PRE')
+    PRE = ProportionalReductionInError()
     GMP = GeometricMeanProbability()
-    midpoint2D = VectorAccessor('midpoint2D')
-    midpoint3D = VectorAccessor('midpoint3D')
-    spread2D = VectorAccessor('spread2D')
-    spread3D = VectorAccessor('spread3D')
+    midpoint1D = Midpoint('midpoint1D')
+    midpoint2D = Midpoint('midpoint2D')
+    midpoint3D = Midpoint('midpoint3D')
+    spread1D = Spread('spread1D')
+    spread2D = Spread('spread2D')
+    spread3D = Spread('spread3D')
     correct_yea = CorrectYea()
     correct_nay = CorrectNay()
     wrong_nay = WrongNay()
@@ -152,10 +195,11 @@ class _WnominateRollcalls(SubWrapper):
         'correct_yea', 'correct_nay', 'wrong_nay', 'wrong_yea', )
 
 
+# --------------------------------------------------------------------------
+# Wnominate object and its accessors.
 class Dimensions(VectorAccessor):
     '''An integer representing the number of dimensions estimated.
     '''
-
 
 class Eigenvalues(VectorAccessor):
     '''A list of rollcall eigenvalues. Somehow the size of the eigenvalues
@@ -173,7 +217,7 @@ class Weights(VectorAccessor):
 
 class Fits(VectorAccessor):
     '''A vector of length 3*dimensions with the classic measures of fit.
-    In order, it contains the correct classiﬁcations for each dimension, the
+    In order, it contains the correct classifications for each dimension, the
     APREs for each dimension, and the overall GMPs for each dimension.
     '''
 
@@ -184,8 +228,8 @@ class Wnominate(Wrapper):
     weights = Weights()
     fits = Fits()
 
-    legislators = _WnominateLegislators()
-    rollcalls = _WnominateRollcalls()
+    legislators = WnominateLegislators()
+    rollcalls = WnominateRollcalls()
 
     eq_attrs = (
         'dimensions', 'eigenvalues', 'beta', 'weights', 'fits',
@@ -203,6 +247,13 @@ class Wnominate(Wrapper):
         return WnominateSummary(r_wnominate.summary_nomObject(self.obj))
 
     def plot(self):
+        '''Equivalent to:
+
+            rollcall.plot_coords()
+            rollcall.plot_angles()
+            rollcall.plot_skree()
+            rollcall.plot_cutlines()
+        '''
         return r_wnominate.plot_nomObject(self.obj)
 
     def plot_coords(self):
@@ -210,6 +261,12 @@ class Wnominate(Wrapper):
 
     def plot_angles(self):
         return r_wnominate.plot_angles(self.obj)
+
+    def plot_skree(self):
+        return r_wnominate.plot_skree(self.obj)
+
+    def plot_cutlines(self):
+        return r_wnominate.plot_cutlines(self.obj)
 
 
 class _WnominateTranslator(Translator):
