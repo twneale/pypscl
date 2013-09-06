@@ -5,8 +5,6 @@ from collections import namedtuple
 
 from pandas import DataFrame
 
-from pscl.rollcall import Rollcall
-
 
 VoterData = namedtuple('VoterData', (
     'congress_number',
@@ -60,8 +58,10 @@ class OrdFile(object):
             votes=map(float, list(bf.read().strip())))
         return data
 
-    def as_rollcall(self):
-
+    def as_dataframe(self):
+        '''Convert the ord file into a pandas.Dataframe in the form expected
+        by the pscl rollcall function.
+        '''
         # Convert the ord file into a mapping of vote_ids to lists of
         # vote values, where list index position corresponds to voter_id.
         votes = []
@@ -74,12 +74,4 @@ class OrdFile(object):
         # Convert the mapping into a pandas DataFrame.
         dataframe = DataFrame(votes_dict, index=names)
 
-        # Create a rollcall object similar to pscl's.
-        rollcall = Rollcall.from_dataframe(dataframe,
-            yea=[1.0, 2.0, 3.0],
-            nay=[4.0, 5.0, 6.0],
-            missing=[7.0, 8.0, 9.0],
-            not_in_legis=0.0,
-            legis_names=names)
-
-        return rollcall
+        return dataframe
