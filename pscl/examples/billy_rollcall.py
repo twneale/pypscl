@@ -1,9 +1,11 @@
+import os
+import json
 from collections import defaultdict
 
 from pandas import DataFrame
 from rpy2.robjects.packages import importr
+import pymongo
 
-from billy.core import db
 from pscl.rollcall import Rollcall
 from pscl.ideal import ideal
 
@@ -20,8 +22,11 @@ if __name__ == '__main__':
 
     MISSING = 3
 
+    client = pymongo.MongoClient()
+    db = client.fiftystates
+
     spec = dict(state=state, session=session, chamber=chamber)
-    # spec = dict(state=state, session='2013-2014', chamber=chamber)
+    # spec = dict(state='ny', session='2013-2014', chamber='upper')
     chamber = spec['chamber']
     bill_ids = db.bills.find(spec).distinct('_id')
     votes = db.votes.find(
@@ -59,6 +64,13 @@ if __name__ == '__main__':
     xbar = ideal(rollcall).xbar
     legs = db.legislators.find(dict(state=state))
     legs = {leg['_id']: leg for leg in legs}
+
+    fn = '~/sunlight/openstates/experimental/birdy/data/%s-xbar.json' % '.'.join(sys.argv[1:])
+    with open(os.path.expanduser(fn), 'w') as f:
+        json.dump(xbar, f)
+
+    sys.exit(1)
+    import pdb; pdb.set_trace()
     # for k, v in xbar.items():
     #     print k, v, legs[k]['full_name'], legs[k]['party']
 
