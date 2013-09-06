@@ -32,10 +32,9 @@ class TestNomNom(TestCase):
     # origininall created.
     here = dirname(abspath(__file__))
     with cd(join(here, 'fixtures')):
-        f = open('sen90kh.ord')
-    ordfile = OrdFile(f)
+        with open('sen90kh.ord') as f:
+            rollcall = Rollcall.from_ordfile(f)
 
-    rollcall = ordfile.as_rollcall()
     summary = rollcall.summary()
 
     # Calculate the expected wnominate result.
