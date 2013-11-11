@@ -1,2 +1,3 @@
 *.pyc
 .python_history
+settings_local.py
