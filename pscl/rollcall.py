@@ -1,7 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from pandas.rpy import common as rpy_common
-from scipy.stats import gaussian_kde
 
 from rpy2.robjects.packages import importr
 
