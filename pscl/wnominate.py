@@ -15,8 +15,8 @@ class Coord(VectorAccessor):
     '''
 
 class WnominateSummary(Wrapper):
-    coord1D = Coord('coord1d')
-    coord2D = Coord('coord2d')
+    coord1D = Coord('coord1D')
+    coord2D = Coord('coord2D')
     eq_attrs = ('coord1D', 'coord2D')
 
 
@@ -132,7 +132,7 @@ class WnominateLegislators(SubWrapper):
 
     se1D = StandardError1D()
     se2D = StandardError2D()
-    coord1D = Coord('coord1d')
+    coord1D = Coord('coord1D')
     coord2D = Coord('coord2D')
     coord3D = Coord('coord3D')
 
