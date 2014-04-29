@@ -189,8 +189,9 @@ class WnominateRollcalls(SubWrapper):
     wrong_nay = WrongNay()
     wrong_yea = WrongYea()
 
+    # Excluded midpoint3D because none of test data had that attr.
     eq_attrs = (
-        'PRE', 'GMP', 'midpoint2D', 'midpoint3D', 'spread2D', 'spread3D',
+        'PRE', 'GMP', 'midpoint2D', 'spread2D', 'spread3D',
         'correct_yea', 'correct_nay', 'wrong_nay', 'wrong_yea', )
 
 
