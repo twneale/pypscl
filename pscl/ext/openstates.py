@@ -9,7 +9,7 @@ class RollcallBuilder(object):
     '''Provides an easy(ish) way to build a rollcall object from
     the Open States API.
     '''
-    def __init__(self, valid_ids, YES=1, NO=2, OTHER=3, NA=9):
+    def __init__(self, valid_ids, YES=1, NO=2, OTHER=3, NA=0):
         self.votedata = defaultdict(dict)
         self.YES = float(YES)
         self.NO = float(NO)
@@ -40,7 +40,7 @@ class RollcallBuilder(object):
     def get_rollcall(self):
         # Convert the dict into a pandas DataFrame.
         dataframe = DataFrame(self.votedata, index=self.leg_ids)
-        dataframe.fillna(value=self.NA)
+        dataframe = dataframe.fillna(value=self.NA)
 
         # Create a rollcall object similar to pscl's.
         rollcall = Rollcall.from_dataframe(dataframe,
@@ -54,10 +54,11 @@ class RollcallBuilder(object):
 
 
 if __name__ == '__main__':
-    from sunlight import openstates, cache
-    cache.enable('mongo')
-    cache.logger.setLevel(10)
+    from sunlight import openstates, response_cache
+    response_cache.enable('mongo')
+    response_cache.logger.setLevel(10)
 
+    # Wrangle the API data into a Rollcall object.
     spec = dict(state='al', chamber='lower', search_window='term:2011-2014')
     valid_ids = [leg['id'] for leg in openstates.legislators(**spec)]
     builder = RollcallBuilder(valid_ids)
@@ -70,4 +71,10 @@ if __name__ == '__main__':
             builder.add_vote(vote)
 
     rollcall = builder.get_rollcall()
+
+    wnominate = rollcall.wnominate(polarity=('ALL000086', 'ALL000085'))
+    wnom_values = wnominate.legislators.coord1D
+
+    ideal = rollcall.ideal()
+    ideal_values = ideal.xbar
     import pdb; pdb.set_trace()
