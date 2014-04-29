@@ -239,7 +239,7 @@ class Wnominate(Wrapper):
         to each for me through rpy2. Necessary for unit tests to work.
         '''
         self.legislators == other.legislators
-        self.rollcalls = other.rollcalls
+        self.rollcalls == other.rollcalls
         return tuple(self._get_eq_vals()) == tuple(other._get_eq_vals())
 
     def summary(self):
