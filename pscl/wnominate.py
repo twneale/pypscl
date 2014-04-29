@@ -23,15 +23,14 @@ class WnominateSummary(Wrapper):
 # --------------------------------------------------------------------------
 # WnominateRollcalls object and its accessors.
 class CorrectClassification(VectorAccessor):
-    '''The "correct classification." The wnominate docs don't make clear
-    what this is.
+    '''The "correct classification."
     '''
     key = 'CC'
 
 
 class CorrectYea(VectorAccessor):
     '''The wnominate docs described this as 'Predicted Yeas and Actual Yeas',
-    which seems to imply two lists, of a list of 2-tuples. This attribute
+    which seems to imply two lists, or a list of 2-tuples. This attribute
     only returns a list of floats, though, so I don't get it.
     '''
     key = 'correctYea'
@@ -39,7 +38,7 @@ class CorrectYea(VectorAccessor):
 
 class WrongYea(VectorAccessor):
     '''The wnominate docs described this as 'Predicted Yeas and Actual Nays',
-    which seems to imply two lists, of a list of 2-tuples. This attribute
+    which seems to imply two lists, or a list of 2-tuples. This attribute
     only returns a list of floats, though, so I don't get it.
     '''
     key = 'wrongYea'
@@ -47,7 +46,7 @@ class WrongYea(VectorAccessor):
 
 class CorrectNay(VectorAccessor):
     '''The wnominate docs described this as 'Predicted Nays and Actual Nays',
-    which seems to imply two lists, of a list of 2-tuples. This attribute
+    which seems to imply two lists, or a list of 2-tuples. This attribute
     only returns a list of floats, though, so I don't get it.
     '''
     key = 'correctNay'
@@ -55,7 +54,7 @@ class CorrectNay(VectorAccessor):
 
 class WrongNay(VectorAccessor):
     '''The wnominate docs described this as 'Predicted Yeas and Actual Yeas',
-    which seems to imply two lists, of a list of 2-tuples. This attribute
+    which seems to imply two lists, or a list of 2-tuples. This attribute
     only returns a list of floats, though, so I don't get it.
     '''
     key = 'wrongNay'
